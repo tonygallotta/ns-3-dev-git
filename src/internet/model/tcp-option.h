@@ -57,6 +57,7 @@ public:
     MSS = 2,      //!< MSS
     WINSCALE = 3, //!< WINSCALE
     TS = 8,       //!< TS
+    FAST_OPEN = 34,
     UNKNOWN = 255 //!< not a standardized value; for unknown recv'd options
   };
 

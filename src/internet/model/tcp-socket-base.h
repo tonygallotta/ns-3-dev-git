@@ -233,7 +233,7 @@ protected:
    *
    * \returns 0 on success
    */
-  int DoConnect (void);
+  virtual int DoConnect (const Address & address);
 
   /**
    * \brief Schedule-friendly wrapper for Socket::NotifyConnectionSucceeded()
@@ -266,7 +266,7 @@ protected:
    * \param fromAddress the address of the remote host
    * \param toAddress the address the connection is directed to
    */
-  void CompleteFork (Ptr<Packet> p, const TcpHeader& tcpHeader, const Address& fromAddress, const Address& toAddress);
+  virtual void CompleteFork (Ptr<Packet> p, const TcpHeader& tcpHeader, const Address& fromAddress, const Address& toAddress);
 
 
 
@@ -346,6 +346,16 @@ protected:
   /**
    * \brief Extract at most maxSize bytes from the TxBuffer at sequence seq, add the
    *        TCP header, and send to TcpL4Protocol
+   *
+   * \param seq the sequence number
+   * \param maxSize the maximum data block to be transmitted (in bytes)
+   * \param withAck forces an ACK to be sent
+   * \returns the number of bytes sent
+   */
+  uint32_t SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, uint8_t flags);
+
+  /**
+   * \brief Convenience method for instead of calling with specific flags
    *
    * \param seq the sequence number
    * \param maxSize the maximum data block to be transmitted (in bytes)
@@ -444,7 +454,7 @@ protected:
    * \param packet the packet
    * \param tcpHeader the packet's TCP header
    */
-  void ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeader); // Received a packet upon ESTABLISHED state
+  virtual void ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeader); // Received a packet upon ESTABLISHED state
 
   /**
    * \brief Received a packet upon LISTEN state.
@@ -454,7 +464,7 @@ protected:
    * \param fromAddress the source address
    * \param toAddress the destination address
    */
-  void ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
+  virtual void ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
                       const Address& fromAddress, const Address& toAddress);
 
   /**
@@ -463,7 +473,7 @@ protected:
    * \param packet the packet
    * \param tcpHeader the packet's TCP header
    */
-  void ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader);
+  virtual void ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader);
 
   /**
    * \brief Received a packet upon SYN_RCVD.
@@ -473,7 +483,7 @@ protected:
    * \param fromAddress the source address
    * \param toAddress the destination address
    */
-  void ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader,
+  virtual void ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader,
                        const Address& fromAddress, const Address& toAddress);
 
   /**
@@ -606,7 +616,7 @@ protected:
 
   /**
    * \brief Read TCP options from incoming packets
-   *  
+   *
    * This method sequentially checks each kind of option, and if it
    * is present in the header, starts its processing.
    *

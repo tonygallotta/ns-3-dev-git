@@ -1,0 +1,7 @@
+.DS_Store
+.lock-waf_darwin_build
+.waf*
+build/
+examples/.DS_Store
+output/
+*.pyc

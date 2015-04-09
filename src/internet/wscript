@@ -66,7 +66,7 @@ def configure(conf):
         conf.report_optional_feature("nsc", "Network Simulation Cradle", False,
                                      "NSC not found (see option --with-nsc)")
 	return
-    
+
     if Options.platform in ['linux', 'freebsd']:
         arch = os.uname()[4]
     else:
@@ -78,7 +78,7 @@ def configure(conf):
         conf.check_nonfatal(mandatory=True, lib='dl', define_name='HAVE_DL', uselib_store='DL')
         ok = True
     conf.msg('Checking for NSC supported architecture ' + (arch or ''), ok)
-    
+
     if not ok:
         conf.env['NSC_ENABLED'] = False
         conf.report_optional_feature("nsc", "Network Simulation Cradle", False,
@@ -145,6 +145,7 @@ def build(bld):
         'model/ipv6-option-demux.cc',
         'model/icmpv6-l4-protocol.cc',
         'model/tcp-socket-base.cc',
+	'model/tcp-fastopen.cc',
         'model/tcp-rfc793.cc',
         'model/tcp-tahoe.cc',
         'model/tcp-reno.cc',
@@ -153,6 +154,7 @@ def build(bld):
         'model/tcp-rx-buffer.cc',
         'model/tcp-tx-buffer.cc',
         'model/tcp-option.cc',
+        'model/tcp-option-fastopen.cc',
         'model/tcp-option-rfc793.cc',
         'model/tcp-option-winscale.cc',
         'model/tcp-option-ts.cc',
@@ -257,6 +259,7 @@ def build(bld):
         'model/udp-header.h',
         'model/tcp-header.h',
         'model/tcp-option.h',
+        'model/tcp-option-fastopen.h',
         'model/icmpv4.h',
         'model/icmpv6-header.h',
         # used by routing
@@ -325,7 +328,8 @@ def build(bld):
         'helper/ipv6-interface-container.h',
         'helper/ipv6-routing-helper.h',
         'model/ipv6-address-generator.h',
-        'model/tcp-rfc793.h',        
+	'model/tcp-fastopen.h',
+        'model/tcp-rfc793.h',
         'model/tcp-tahoe.h',
         'model/tcp-reno.h',
         'model/tcp-newreno.h',

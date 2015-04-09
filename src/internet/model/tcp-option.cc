@@ -19,6 +19,7 @@
  */
 
 #include "tcp-option.h"
+ #include "tcp-option-fastopen.h"
 #include "tcp-option-rfc793.h"
 #include "tcp-option-winscale.h"
 #include "tcp-option-ts.h"
@@ -75,6 +76,7 @@ TcpOption::CreateOption (uint8_t kind)
     { TcpOption::MSS,       TcpOptionMSS::GetTypeId () },
     { TcpOption::NOP,       TcpOptionNOP::GetTypeId () },
     { TcpOption::TS,        TcpOptionTS::GetTypeId () },
+    { TcpOption::FAST_OPEN, TcpOptionFastOpen::GetTypeId () },
     { TcpOption::WINSCALE,  TcpOptionWinScale::GetTypeId () },
     { TcpOption::UNKNOWN,  TcpOptionUnknown::GetTypeId () }
   };
@@ -101,6 +103,7 @@ TcpOption::IsKindKnown (uint8_t kind)
     case MSS:
     case WINSCALE:
     case TS:
+    case FAST_OPEN:
     // Do not add UNKNOWN here
       return true;
     }

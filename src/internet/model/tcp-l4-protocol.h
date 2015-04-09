@@ -234,6 +234,7 @@ private:
   TypeId m_socketTypeId; //!< The socket TypeId
 private:
   friend class TcpSocketBase;
+  friend class TcpFastOpen;
   void SendPacket (Ptr<Packet>, const TcpHeader &,
                    Ipv4Address, Ipv4Address, Ptr<NetDevice> oif = 0);
   void SendPacket (Ptr<Packet>, const TcpHeader &,

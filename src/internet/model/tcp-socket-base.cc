@@ -487,7 +487,7 @@ TcpSocketBase::Connect (const Address & address)
   m_cnCount = m_cnRetries;
 
   // DoConnect() will do state-checking and send a SYN packet
-  return DoConnect ();
+  return DoConnect (address);
 }
 
 /* Inherit from Socket class: Listen on the endpoint for an incoming connection */
@@ -521,7 +521,7 @@ TcpSocketBase::Close (void)
       SendRST ();
       return 0;
     }
- 
+
   if (m_txBuffer->SizeFromSequence (m_nextTxSequence) > 0)
     { // App close with pending data must wait until all data transmitted
       if (m_closeOnEmpty == false)
@@ -539,7 +539,7 @@ int
 TcpSocketBase::ShutdownSend (void)
 {
   NS_LOG_FUNCTION (this);
-  
+
   //this prevents data from being added to the buffer
   m_shutdownSend = true;
   m_closeOnEmpty = true;
@@ -550,7 +550,7 @@ TcpSocketBase::ShutdownSend (void)
       if (m_state == ESTABLISHED || m_state == CLOSE_WAIT)
         {
           NS_LOG_INFO("Emtpy tx buffer, send fin");
-          SendEmptyPacket (TcpHeader::FIN);  
+          SendEmptyPacket (TcpHeader::FIN);
 
           if (m_state == ESTABLISHED)
             { // On active close: I am the first one to send FIN
@@ -561,10 +561,10 @@ TcpSocketBase::ShutdownSend (void)
             { // On passive close: Peer sent me FIN already
               NS_LOG_INFO ("CLOSE_WAIT -> LAST_ACK");
               m_state = LAST_ACK;
-            }  
+            }
         }
     }
- 
+
   return 0;
 }
 
@@ -769,10 +769,9 @@ TcpSocketBase::SetupCallback (void)
 
 /* Perform the real connection tasks: Send SYN if allowed, RST if invalid */
 int
-TcpSocketBase::DoConnect (void)
+TcpSocketBase::DoConnect (const Address & address)
 {
   NS_LOG_FUNCTION (this);
-
   // A new connection is allowed only if this socket does not have a connection
   if (m_state == CLOSED || m_state == LISTEN || m_state == SYN_SENT || m_state == LAST_ACK || m_state == CLOSE_WAIT)
     { // send a SYN packet and change state into SYN_SENT
@@ -846,7 +845,7 @@ TcpSocketBase::CloseAndNotify (void)
 
   NS_LOG_INFO (TcpStateName[m_state] << " -> CLOSED");
   m_state = CLOSED;
-  DeallocateEndPoint ();  
+  DeallocateEndPoint ();
 }
 
 
@@ -1161,7 +1160,7 @@ TcpSocketBase::ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeade
     { // Received RST or the TCP flags is invalid, in either case, terminate this socket
       if (tcpflags != TcpHeader::RST)
         { // this must be an invalid flag, send reset
-          NS_LOG_LOGIC ("Illegal flag " << tcpflags << " received. Reset packet is sent.");
+          NS_LOG_LOGIC ("ProcessEstablished: Illegal flag " << tcpflags << " received. Reset packet is sent.");
           SendRST ();
         }
       CloseAndNotify ();
@@ -1243,7 +1242,6 @@ TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 
   // Extract the flags. PSH and URG are not honoured.
   uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG);
-
   if (tcpflags == 0)
     { // Bare data, accept it and move to ESTABLISHED state. This is not a normal behaviour. Remove this?
       NS_LOG_INFO ("SYN_SENT -> ESTABLISHED");
@@ -1286,7 +1284,7 @@ TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
     { // Other in-sequence input
       if (tcpflags != TcpHeader::RST)
         { // When (1) rx of FIN+ACK; (2) rx of FIN; (3) rx of bad flags
-          NS_LOG_LOGIC ("Illegal flag " << std::hex << static_cast<uint32_t> (tcpflags) << std::dec << " received. Reset packet is sent.");
+          NS_LOG_LOGIC ("ProcessSynSent: Illegal flag " << std::hex << static_cast<uint32_t> (tcpflags) << std::dec << " received. Reset packet is sent.");
           SendRST ();
         }
       CloseAndNotify ();
@@ -1366,7 +1364,7 @@ TcpSocketBase::ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader,
     { // Other in-sequence input
       if (tcpflags != TcpHeader::RST)
         { // When (1) rx of SYN+ACK; (2) rx of FIN; (3) rx of bad flags
-          NS_LOG_LOGIC ("Illegal flag " << tcpflags << " received. Reset packet is sent.");
+          NS_LOG_LOGIC ("ProcessSynRcvd: Illegal flag " << tcpflags << " received. Reset packet is sent.");
           if (m_endPoint)
             {
               m_endPoint->SetPeer (InetSocketAddress::ConvertFrom (fromAddress).GetIpv4 (),
@@ -1422,7 +1420,7 @@ TcpSocketBase::ProcessWait (Ptr<Packet> packet, const TcpHeader& tcpHeader)
     { // This is a RST or bad flags
       if (tcpflags != TcpHeader::RST)
         {
-          NS_LOG_LOGIC ("Illegal flag " << tcpflags << " received. Reset packet is sent.");
+          NS_LOG_LOGIC ("ProcessWait: Illegal flag " << tcpflags << " received. Reset packet is sent.");
           SendRST ();
         }
       CloseAndNotify ();
@@ -1479,7 +1477,7 @@ TcpSocketBase::ProcessClosing (Ptr<Packet> packet, const TcpHeader& tcpHeader)
         }
       else if (tcpflags != TcpHeader::RST)
         { // Receive of SYN or SYN+ACK or bad flags or pure data
-          NS_LOG_LOGIC ("Illegal flag " << tcpflags << " received. Reset packet is sent.");
+          NS_LOG_LOGIC ("ProcessClosing: Illegal flag " << tcpflags << " received. Reset packet is sent.");
           SendRST ();
         }
       CloseAndNotify ();
@@ -1516,7 +1514,7 @@ TcpSocketBase::ProcessLastAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
     }
   else
     { // Received a SYN or SYN+ACK or bad flags
-      NS_LOG_LOGIC ("Illegal flag " << tcpflags << " received. Reset packet is sent.");
+      NS_LOG_LOGIC ("ProcessLastAck: Illegal flag " << tcpflags << " received. Reset packet is sent.");
       SendRST ();
       CloseAndNotify ();
     }
@@ -1888,7 +1886,7 @@ TcpSocketBase::CompleteFork (Ptr<Packet> p, const TcpHeader& h,
   m_tcp->m_sockets.push_back (this);
 
   // Change the cloned socket from LISTEN state to SYN_RCVD
-  NS_LOG_INFO ("LISTEN -> SYN_RCVD");
+  NS_LOG_INFO ("finish data fork: LISTEN -> SYN_RCVD");
   m_state = SYN_RCVD;
   m_cnCount = m_cnRetries;
   SetupCallback ();
@@ -1912,22 +1910,29 @@ TcpSocketBase::ConnectionSucceeded ()
     }
 }
 
-/* Extract at most maxSize bytes from the TxBuffer at sequence seq, add the
-    TCP header, and send to TcpL4Protocol */
 uint32_t
 TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck)
 {
+  uint8_t flags = withAck ? TcpHeader::ACK : 0;
+  return SendDataPacket (seq, maxSize, flags);
+}
+/* Extract at most maxSize bytes from the TxBuffer at sequence seq, add the
+    TCP header, and send to TcpL4Protocol */
+uint32_t
+TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, uint8_t flags)
+{
+  bool withAck = flags == TcpHeader::ACK;
   NS_LOG_FUNCTION (this << seq << maxSize << withAck);
 
   bool isRetransmission = false;
   if ( seq == m_txBuffer->HeadSequence () )
     {
+      NS_LOG_INFO ("It's a retransmission !");
       isRetransmission = true;
     }
 
   Ptr<Packet> p = m_txBuffer->CopyFromSequence (maxSize, seq);
   uint32_t sz = p->GetSize (); // Size of packet
-  uint8_t flags = withAck ? TcpHeader::ACK : 0;
   uint32_t remainingData = m_txBuffer->SizeFromSequence (seq + SequenceNumber32 (sz));
 
   if (withAck)
